@@ -250,6 +250,19 @@
             "Accendi l'aria condizionata dell'ufficio"
           ]
         },
+        "nl-NL": {
+          "name": "Home Assistant Assist",
+          "summary": "Bedien uw slimme huis door interactie met Home Assistant Assist.",
+          "description": "Met deze vaardigheid kunt u met uw Home Assistant Assist-instantie communiceren via de conversatie-API.",
+          "smallIconUri": "file://assets/images/common_smallIconUri.png",
+          "largeIconUri": "file://assets/images/common_largeIconUri.png",
+          "examplePhrases": [
+            "Alexa, open home assistant",
+            "Doe de keukenverlichting uit",
+            "Zet de airconditioning op kantoor aan"
+          ]
+        },
+        
         "pt-BR": {
           "name": "Home Assistant Assist",
           "summary": "Controle sua casa inteligente interagindo com o Assist do Home Assistant.",
