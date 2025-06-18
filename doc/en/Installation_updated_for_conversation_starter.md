@@ -1,3 +1,16 @@
+# Installation of Conversation Starter for HomeAssistantAssist
+
+> ⚠️ **Before continuing**, ensure everything is already working with the original Assist integration.
+
+Original installation instructions here: https://github.com/fabianosan/HomeAssistantAssist/blob/main/doc/en/INSTALLATION.md
+
+---
+
+## 1. Update Lambda Function
+
+Replace the current Lambda function with the code below:
+
+```
 # -*- coding: utf-8 -*-
 import os
 import re
@@ -325,3 +338,111 @@ sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
 
 lambda_handler = sb.lambda_handler()
+```
+---
+You will then need to save and deploy the code. Once it has deployed head over to the build tab and click 'Build Skill'
+## 2. Update `config.cfg`
+
+Add the following line to your `config.cfg` file:
+
+```
+assist_input_entity = input_text.assistant_input
+```
+Save and deploy.
+
+Once deployed go to the build tab and press build skill
+
+---
+
+## 3. Create a Text Helper in Home Assistant
+
+1. Open Home Assistant.
+2. Go to:  
+   **Settings → Devices & Services → Helpers**
+3. Click **Create Helper** → Choose **Text**.
+4. Set the following options:
+   - **Name:** `assistant_input`
+   - **Maximum number of characters:** `255` (this is the hard limit)
+5. Click **Create**.
+
+> ⚠️ Note: 255 characters is a hard limitation for prompt size. There's no reliable workaround yet, except embedding other text inputs into the prompt.
+
+---
+
+## 4. Create a Script in Home Assistant
+
+### Step-by-step Instructions:
+
+1. Go to the [Alexa Developer Console](https://developer.amazon.com/alexa/console/ask).
+2. On your skill’s home page, click **Copy Skill ID**.
+3. In Home Assistant, navigate to **Settings → Automations & Scenes → Scripts**.
+4. Click **Add Script** and enter a name like `Prompt Alexa Device`.
+5. Click the three-dot menu (⋮) and switch to **YAML mode**.
+6. Paste the following YAML into the editor.  
+   Replace the placeholders:
+
+   - `*your Skill ID*` → your actual Alexa skill ID  
+   - `*the alexa you want to target*` → the `media_player` entity ID of your Alexa device
+
+```
+sequence:
+  - action: input_text.set_value
+    metadata: {}
+    data:
+      value: "{{prompt}}"
+    target:
+      entity_id: input_text.assistant_input
+  - action: media_player.play_media
+    data:
+      media_content_id: *your Skill ID*
+      media_content_type: skill
+    target:
+      entity_id: *the alexa you want to target*
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 10
+      milliseconds: 0
+  - action: input_text.set_value
+    metadata: {}
+    data:
+      value: none
+    target:
+      entity_id: input_text.assistant_input 
+alias: prompt on Alexa device
+description: ""
+fields:
+  prompt:
+    selector:
+      text: null
+    name: prompt
+    description: >-
+      The prompt to pass to the skill, used as the first message to start a conversation.
+    required: true
+```
+
+7. Click **Save**.
+
+---
+
+## 5. Call the Script from an Automation
+
+Now that the script is set up, you can trigger it from an automation. This will:
+
+- Pass a prompt to your Alexa skill
+- Begin a spoken conversation using the assistant's response
+
+### Example Automation Action
+
+```
+action: script.prompt_alexa_device
+metadata: {}
+data:
+  prompt: >-
+    I am cooking in the kitchen, can you offer to play some music,
+    suggest a genre based on the time of day and day of the week.
+```
+
+> ⚠️ **Important:** Prompts must be **fewer than 255 characters**, or the call will fail.
+
+---
