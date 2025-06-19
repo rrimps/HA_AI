@@ -33,7 +33,8 @@ For slower AIs or servers, try the [AWS Hosted](https://github.com/fabianosan/Ho
 - Open Home Assistant dashboard:
     - Say 'open home assistant' or 'open dashboard' to open your prefered dashboard in Home Assistant.
     - Or clique on sceen to do the same.
-- Other:
+- Others:
+    - Start a conversation with prompt from Home Assistant (thanks to [t07que](https://github.com/t07que))
     - Multi-language support (see [Supported languages](#supported-languages))
 
 If you have a feature idea, open a issue to suggest your idea for implementation.
@@ -102,6 +103,7 @@ Para IA's ou servidores mais lentos, tente a versão [AWS Hosted](https://github
     - Diga 'abrir home assistant' ou 'abrir painel' para abrir seu painel preferido no Home Assistant.
     - Ou clique na tela para fazer o mesmo.
 - Outros:
+    - Iniciar uma conversa com a Alexa de um prompt do Home Assistant (agradecimento ao [t07que](https://github.com/t07que))
     - Suporte a vários idiomas (veja [Idiomas suportados](#idiomas-suportados))
 
 Se você tiver uma ideia de recurso, abra um issue para sugerir sua ideia para implementação.

@@ -1,6 +1,20 @@
 
 ## INSTALAÇÃO
 
+> ⚠️ **Before continuing**, ensure everything is already working with the original Assist integration in Home Assistant.
+
+### Table of Contents
+
+1. [Configurando o Home Assistant](#configurando-o-home-assistant)
+2. [Criando a Skill Alexa](#criando-a-skill-alexa)
+3. [Obtendo o home_assistant_agent_id](#obtendo-o-home_assistant_agent_id-do-assist-ou-da-ia-generativa-se-estiver-utilizando-uma)
+4. [Obtendo o home_assistant_token](#obtendo-o-home_assistant_token-token-de-longa-duração)
+5. [Configurando o Invocation Name](#configurando-o-invocation-name)
+6. [Publicando a Skill](#publicando-a-skill)
+7. [Ativando o reconhecimento de cômodo](#ativando-o-reconhecimento-de-cômodo-só-funciona-com-ia)
+8. [Ativando iniciador de conversa com prompt do Home Assistant](#ativando-iniciador-de-conversa-com-prompt-do-home-assistant)
+
+
 ### Configurando o Home Assistant
 - Ative a API do Home Assistant para seu usuário e obtenha um token de acesso de longa duração.
 
@@ -32,14 +46,15 @@
    - **home_assistant_token**: Token de acesso de longa duração do seu Home Assistant.
    - **(opcional) home_assistant_agent_id**: ID do agente de conversação configurado no seu Home Assistant, se não configurado, será utilizado o Assist (Padrão).
    - **(opcional) home_assistant_language**: Idioma para chamar a API de conversação do Home Assistant. Se não configurado, será utilizado o padrão do agente definido.
-   - **(opcional) home_assistant_room_recognition**: Ative o modo de identificação de área do dispositivo com `True`. **Atenção**, só funciona com IA, se utilizar o Assist padrão, desative essa opção, pois nenhum comando irá funcionar.
+   - **(opcional) home_assistant_room_recognition**: Ative o modo de identificação de área do dispositivo com `True`. **Atenção**, só funciona com IA e precisa de configurações adicionais no Home Assistant. _Se utiliza o Assist padrão, desative essa opção, pois nenhum comando irá funcionar com ela ativada e sem a configuração adequada._
    - **(opcional) home_assistant_dashboard**: Caminho do dashboard para exibir na echoshow, ex.: `mushroom`, se não configurado, irá carregar o "lovelace"
-   - **(opcional) home_assistant_kioskmode**: Ative o modo quisque com `True`. **Atenção**, só ative essa opção se tiver o componente instalado.
+   - **(opcional) home_assistant_kioskmode**: Ative o modo quisque com `True`. **Atenção**, só ative essa opção se tiver o [componente kiosk mode](https://github.com/maykar/kiosk-mode) instalado.
+   - **(opcional) assist_input_entity**: Ativando funcionalidade de iniciar uma conversa com prompt do Home Assistant `input_text.assistant_input`. **Atenção**, essa funcionalidade requer [configurações extras no Home Assistant](#ativando-iniciador-de-conversa-com-prompt-do-home-assistant).
 4. Se desejar, altere as respostas padrão da skill no arquivo `/locale/pt-BR.lang` ou outro idioma suportado).
 5. Salve as alterações.
 6. Clique em `Deploy`.
 
-### Obtendo o `home_assistant_agent_id` do Assist ou da IA generativa (se estiver utilizando uma):
+### Obtendo o `home_assistant_agent_id` do Assist ou da IA generativa (se estiver utilizando uma)
 
 - Com seu Home Assistant aberto, navegue até a **Ferramentas de Desenvolvedor**, vá na aba `Ações` e siga os passos abaixo: 
 1. Busque por `conversation.process` no campo de ações e selecione:
@@ -54,7 +69,7 @@
 
   ![Ação: Agente ID](images/dev_action_yaml.png)
 
-### Obtendo o `home_assistant_token` (Token de longa duração):
+### Obtendo o `home_assistant_token` (Token de longa duração)
 
 - Com seu Home Assistant aberto, navegue até o seu perfil de usuário, no canto inferior esquerdo, clique e depois vá na aba `Segurança` na parte superior: 
   1. No final da página, clique no botão `CRIAR TOKEN`:
@@ -113,6 +128,100 @@
      ```txt
      Se solicitado uma ação em um dispositivo e sua área não for fornecida, capture o identificador contido após o "device_id:" no comando, obtenha o rótulo com mesmo identificador e associe a área desse rótulo ao dispositivo para saber área o dispositivo pertence.
      ```
+
+### Ativando iniciador de conversa com prompt do Home Assistant
+
+#### Esta configuração adiciona o recurso de prompter para permitir conversas da Alexa iniciadas a partir do Home Assistant
+
+1. Ative a configuração na skill da Alexa:
+   - Adicione a seguinte linha ao seu arquivo `config.cfg`:
+
+     ```
+     assist_input_entity = input_text.assistant_input
+     ```
+
+2. Crie um Auxiliar de Texto no Home Assistant:
+
+    1. Abra o Home Assistant.
+    2. Vá em: **Configurações → Dispositivos e Serviços → Auxiliares**
+    3. Clique em **Criar Auxiliar** → Escolha **Texto**.
+    4. Defina as seguintes opções:
+        - **Nome:** `assistant_input`
+        - **Número máximo de caracteres:** `255` (este é o limite rígido)
+    5. Clique em **Criar**.
+
+    > ⚠️ Nota: 255 caracteres é uma limitação rígida para o tamanho do prompt. Ainda não há uma solução confiável, exceto incorporar outras entradas de texto no prompt.
+
+3. Crie um Script no Home Assistant:
+
+    1. Vá até o [Console do Desenvolvedor Alexa](https://developer.amazon.com/alexa/console/ask).
+    2. Na página inicial da sua skill, clique em **Copiar ID da Skill**.
+    3. No Home Assistant, vá para **Configurações → Automatizações e Cenas → Scripts**.
+    4. Clique em **Adicionar Script** e dê um nome como `Prompt Alexa Device`.
+    5. Clique no menu de três pontos (⋮) e mude para o **modo YAML**.
+    6. Cole o seguinte YAML no editor.  
+       Substitua os espaços reservados:
+         - `*your Skill ID*` → pelo ID real da sua skill Alexa  
+         - `*the alexa you want to target*` → pelo ID da entidade `media_player` do seu dispositivo Alexa
+
+         ```
+         sequence:
+           - action: input_text.set_value
+             metadata: {}
+             data:
+               value: "{{prompt}}"
+             target:
+               entity_id: input_text.assistant_input
+           - action: media_player.play_media
+             data:
+               media_content_id: *your Skill ID*
+               media_content_type: skill
+             target:
+               entity_id: *the alexa you want to target*
+           - delay:
+               hours: 0
+               minutes: 0
+               seconds: 10
+               milliseconds: 0
+           - action: input_text.set_value
+             metadata: {}
+             data:
+               value: none
+             target:
+               entity_id: input_text.assistant_input 
+         alias: prompt on Alexa device
+         description: ""
+         fields:
+           prompt:
+             selector:
+               text: null
+             name: prompt
+             description: >-
+               O prompt a ser enviado para a skill, usado como a primeira mensagem para iniciar uma conversa.
+             required: true
+         ```
+
+    7. Clique em **Salvar**.
+
+4. Chame o Script a partir de uma Automação
+
+    Agora que o script está configurado, você pode acioná-lo a partir de uma automação. Isso irá:
+      - Enviar um prompt para sua skill da Alexa;
+      - Iniciar uma conversa falada com a resposta do assistente.
+      ### Exemplo de Ação de Automação
+
+      ```
+      action: script.prompt_alexa_device
+      metadata: {}
+      data:
+        prompt: >-
+          Estou cozinhando na cozinha, você pode tocar alguma música,
+          sugerir um gênero com base na hora do dia e no dia da semana?
+      ```
+
+      > ⚠️ **Importante:** Os prompts devem ter **menos de 255 caracteres**, ou a chamada não funcionará.
+
+
 
 ### Boa sorte!
 Agora você pode usar sua skill Alexa para integrar e interagir com o Home Assistant via Assist por voz ou abrir a tela do seu dashboard preferido na Echoshow.
