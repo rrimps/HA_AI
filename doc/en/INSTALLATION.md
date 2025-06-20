@@ -41,6 +41,9 @@
      home_assistant_room_recognition=False
      home_assistant_dashboard=YOUR-DASHBOARD-ID
      home_assistant_kioskmode=False
+     ask_for_further_commands=False
+     assist_input_entity=input_text.assistant_input
+     debug=true
      ```
    - **home_assistant_url**: External URL of your Home Assistant (root path).
    - **home_assistant_token**: Long-lived access token for your Home Assistant.
@@ -49,7 +52,9 @@
    - **(optional) home_assistant_room_recognition**: Enable device area recognition mode with `True`. **Attention**, it only works with AI and need extra setup in Home Assistant. _if you're using the default Assist, disable this option, as no command will work._
    - **(optional) home_assistant_dashboard**: Dashboard path to display on Echo Show, e.g., `mushroom`; if not set, "lovelace" will be loaded.
    - **(optional) home_assistant_kioskmode**: Enable kiosk mode with `True`. **Attention**, only activate this option if you have the [kiosk mode component](https://github.com/maykar/kiosk-mode) installed.
+   - **(optional) ask_for_further_commands**, Enabling further commands with `True`. This variable determines whether Alexa will ask for further commands after responding. Set it to `True` to enable this behavior or `False` to disable it. The default is `False`.
    - **(optional) assist_input_entity**: Enable conversation starter with prompt from Home Assistant `input_text.assistant_input`. **Attention**, this feature require [extra setup in Home Assistant](#enabling-conversation-starter-with-prompt-from-home-assistant).
+   - **(optional) debug**, Enable debbuging with `True`. Set this variable to log the debug messages.
 4. If desired, change the default skill responses in the `/locale/en-US.lang` file or another supported language.
 5. Save the changes.
 6. Click on `Deploy`.

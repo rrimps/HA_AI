@@ -15,9 +15,6 @@ from ask_sdk_model.interfaces.alexa.presentation.apl import RenderDocumentDirect
 from datetime import datetime, timezone, timedelta
 
 # Load configurations and localization
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
 def load_config(file_name):
     if str(file_name).endswith(".lang") and not os.path.exists(file_name):
         file_name = "locale/en-US.lang"
@@ -28,6 +25,7 @@ def load_config(file_name):
                 if not line or '=' not in line:
                     continue
                 name, value = line.split('=', 1)
+                # Store in global vars
                 globals()[name] = value
     except Exception as e:
         logger.error(f"Error loading file: {str(e)}")
@@ -35,6 +33,11 @@ def load_config(file_name):
 # Initial config load
 load_config("config.cfg")
 load_config("locale/en-US.lang")
+
+# Log configuration
+debug = bool(globals().get("debug", False))
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
 # Validate HA settings
 if not globals().get("home_assistant_url") or not globals().get("home_assistant_token"):
@@ -44,7 +47,10 @@ if not globals().get("home_assistant_url") or not globals().get("home_assistant_
 conversation_id = None
 last_interaction_date = None
 is_apl_supported = False
+
+home_assistant_url = globals().get("home_assistant_url", "").strip("/")
 apl_document_token = str(uuid.uuid4())
+ask_for_further_commands = bool(globals().get("ask_for_further_commands", False))
 
 # Helper: fetch text input via webhook
 def fetch_prompt_from_ha():
@@ -74,34 +80,43 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         global conversation_id, last_interaction_date, is_apl_supported
+        
         # Load locale per user
         locale = handler_input.request_envelope.request.locale
         load_config(f"locale/{locale}.lang")
 
-                # Check for a pre-set prompt from HA
+        # save user_locale var for regional differences in number handling like 2.4°C / 2,4°C
+        global user_locale
+        user_locale = locale.split("-")[1]  # "de-DE" -> "DE" split to respect lang differencies (not country specific)
+
+        # Check for a pre-set prompt from HA
         prompt = fetch_prompt_from_ha()
         # Only treat valid prompts that are not the literal "none"
         if prompt and prompt.lower() != "none":
             # Process this prompt as user input and keep session open for follow-up
             response = process_conversation(prompt)
-            return handler_input.response_builder\
-                .speak(response)\
-                .ask(globals().get("alexa_speak_question"))\
-                .response
+            return handler_input.response_builder.speak(response).ask(globals().get("alexa_speak_question")).response
 
-        # No prompt: proceed with default welcome
+        # No prompt and Checks if the device has a screen (APL support), if so, loads the interface
         device = handler_input.request_envelope.context.system.device
         is_apl_supported = device.supported_interfaces.alexa_presentation_apl is not None
+        logger.debug("Device: " + repr(device))
+        
+        # Renders the APL document with the button to open HA (if the device has a screen)
         if is_apl_supported:
             handler_input.response_builder.add_directive(
                 RenderDocumentDirective(token=apl_document_token, document=load_template("apl_openha.json"))
             )
+            
+        # Sets the last access and defines which welcome phrase to respond to
         now = datetime.now(timezone(timedelta(hours=-3)))
         current_date = now.strftime('%Y-%m-%d')
         speak_output = globals().get("alexa_speak_next_message")
         if last_interaction_date != current_date:
+            # First run of the day
             speak_output = globals().get("alexa_speak_welcome_message")
             last_interaction_date = current_date
+            
         return handler_input.response_builder.speak(speak_output).ask(speak_output).response
 
 class GptQueryIntentHandler(AbstractRequestHandler):
@@ -109,39 +124,55 @@ class GptQueryIntentHandler(AbstractRequestHandler):
         return ask_utils.is_intent_name("GptQueryIntent")(handler_input)
 
     def handle(self, handler_input):
+        # User query
         query = handler_input.request_envelope.request.intent.slots["query"].value
         logger.info(f"Query received from Alexa: {query}")
+        
+        # Handles specific commands/keywords
         response = keywords_exec(query, handler_input)
         if response:
             return response
+        
         device_id = ""
-        if globals().get("home_assistant_room_recognition", "").lower() == "true":
+        home_assistant_room_recognition = bool(os.environ.get("home_assistant_room_recognition", False))
+        if home_assistant_room_recognition:
+            # Get the deviceId of the device that executed the skill
             device_id = ". device_id: " + handler_input.request_envelope.context.system.device.device_id
+        
         response = process_conversation(f"{query}{device_id}")
         logger.info(f"Response generated: {response}")
-        return handler_input.response_builder.speak(response).ask(globals().get("alexa_speak_question")).response
 
-# Trata palavras chaves para executar comandos específicos
+        if ask_for_further_commands:
+            return handler_input.response_builder.speak(response).ask(globals().get("alexa_speak_question")).response
+        else:
+            return handler_input.response_builder.speak(response).set_should_end_session(True).response
+        
+# Handles keywords to execute specific commands
 def keywords_exec(query, handler_input):
-    # Se o usuário der um comando para 'abrir dashboard' ou 'abrir home assistant', abre o dashboard e interrompe a skill
+    # If the user gives a command to 'open dashboard' or 'open home assistant', it opens the dashboard and stops the skill
     keywords_top_open_dash = globals().get("keywords_to_open_dashboard").split(";")
     if any(ko.strip().lower() in query.lower() for ko in keywords_top_open_dash):
         logger.info("Opening Home Assistant dashboard")
         open_page(handler_input)
         return handler_input.response_builder.speak(globals().get("alexa_speak_open_dashboard")).response
     
-    # Se o usuário der um comando de agradecimento o upara sair, interrompe a skill
+    # If the user gives a thank you command to exit, it interrupts the skill.
     keywords_close_skill = globals().get("keywords_to_close_skill").split(";")
     if any(kc.strip().lower() in query.lower() for kc in keywords_close_skill):
         logger.info("Closing skill from keyword command")
         return CancelOrStopIntentHandler().handle(handler_input)
     
-    # Se não for uma palavra-chave, continua o fluxo normalmente
+    # If it is not a keyword, the flow continues normally.
     return None
 
-# Chama a API do Home Assistant e trata a resposta
+# Calls the Home Assistant API and handles the response
 def process_conversation(query):
     global conversation_id
+    
+    # Gets user-configured environment variables
+    if not home_assistant_url:
+        logger.error("Please set 'home_assistant_url' AWS Lambda Functions environment variable.")
+        return globals().get("alexa_speak_error")
     
     home_assistant_agent_id = globals().get("home_assistant_agent_id", None)
     home_assistant_language = globals().get("home_assistant_language", None)
@@ -163,7 +194,7 @@ def process_conversation(query):
             data["conversation_id"] = conversation_id
 
         # Faz a requisição na API do Home Assistant
-        ha_api_url = "{}/api/conversation/process".format(globals().get("home_assistant_url"))
+        ha_api_url = "{}/api/conversation/process".format(home_assistant_url)
         logger.debug(f"HA request url: {ha_api_url}")        
         logger.debug(f"HA request data: {data}")
         
@@ -232,7 +263,12 @@ def improve_response(speech):
     #replacements = str.maketrans('ïöüÏÖÜ', 'iouIOU')
     #speech = speech.translate(replacements)
     
-    speech = re.sub(r'[^A-Za-z0-9çÇáàâãäéèêíïóôõöúüñÁÀÂÃÄÉÈÊÍÏÓÔÕÖÚÜÑ\sß.,!?]', '', speech)
+    # change decimal seperator if user_locale = "de-DE"
+    if user_locale == "DE":
+        # only replace decimal seperators and not 1.000 seperators
+        speech = re.sub(r'(\d+)\.(\d{1,3})(?!\d)', r'\1,\2', speech)  # Dezimalpunkt (z. B. 2.4 -> 2,4)
+    
+    speech = re.sub(r'[^A-Za-z0-9çÇáàâãäéèêíïóôõöúüñÁÀÂÃÄÉÈÊÍÏÓÔÕÖÚÜÑ\sß.,!?°]', '', speech)
     return speech
 
 # Carrega o template do APL da tela inicial
@@ -273,7 +309,7 @@ def open_page(handler_input):
 
 # Monta a URL do dashboard do Home Assistant
 def get_hadash_url():
-    ha_dashboard_url = globals().get("home_assistant_url")
+    ha_dashboard_url = home_assistant_url
     ha_dashboard_url += "/{}".format(globals().get("home_assistant_dashboard", "lovelace"))
     
     # Adicionando o modo kioskmode, se estiver ativado
