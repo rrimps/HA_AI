@@ -50,6 +50,7 @@ is_apl_supported = False
 
 home_assistant_url = globals().get("home_assistant_url", "").strip("/")
 apl_document_token = str(uuid.uuid4())
+assist_input_entity = globals().get("assist_input_entity", "input_text.assistant_input")
 ask_for_further_commands = bool(globals().get("ask_for_further_commands", False))
 
 # Helper: fetch text input via webhook
@@ -58,11 +59,10 @@ def fetch_prompt_from_ha():
     Reads the state of your input_text helper directly via REST.
     """
     try:
-        entity = globals().get("assist_input_entity", "input_text.assistant_input")
-        url = f"{globals().get('home_assistant_url')}/api/states/{entity}"
+        url = f"{home_assistant_url}/api/states/{assist_input_entity}"
         headers = {
-            "Authorization": f"Bearer {globals().get('home_assistant_token')}",
-            "Content-Type": "application/json"
+            "Authorization": "Bearer {}".format(globals().get("home_assistant_token")),
+            "Content-Type": "application/json",
         }
         resp = requests.get(url, headers=headers, timeout=5)
         if resp.status_code == 200:
@@ -142,11 +142,12 @@ class GptQueryIntentHandler(AbstractRequestHandler):
         response = process_conversation(f"{query}{device_id}")
         logger.info(f"Response generated: {response}")
 
+		logger.debug(f"Ask for further commands enabled: {ask_for_further_commands}")
         if ask_for_further_commands:
             return handler_input.response_builder.speak(response).ask(globals().get("alexa_speak_question")).response
         else:
             return handler_input.response_builder.speak(response).set_should_end_session(True).response
-        
+
 # Handles keywords to execute specific commands
 def keywords_exec(query, handler_input):
     # If the user gives a command to 'open dashboard' or 'open home assistant', it opens the dashboard and stops the skill
