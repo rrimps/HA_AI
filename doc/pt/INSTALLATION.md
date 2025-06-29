@@ -1,22 +1,18 @@
 
 ## INSTALAÇÃO
 
-> ⚠️ **Before continuing**, ensure everything is already working with the original Assist integration in Home Assistant.
+> ⚠️ **Before continuing**, garante que tudo está fncionando com o Assist no Home Assistant e sua instância do Home Assistant está exposta para Internet com um domínio e um certificado HTTPS válido.
 
 ### Table of Contents
 
-1. [Configurando o Home Assistant](#configurando-o-home-assistant)
-2. [Criando a Skill Alexa](#criando-a-skill-alexa)
-3. [Obtendo o home_assistant_agent_id](#obtendo-o-home_assistant_agent_id-do-assist-ou-da-ia-generativa-se-estiver-utilizando-uma)
-4. [Obtendo o home_assistant_token](#obtendo-o-home_assistant_token-token-de-longa-duração)
-5. [Configurando o Invocation Name](#configurando-o-invocation-name)
-6. [Publicando a Skill](#publicando-a-skill)
-7. [Ativando o reconhecimento de cômodo](#ativando-o-reconhecimento-de-cômodo-só-funciona-com-ia)
-8. [Ativando iniciador de conversa com prompt do Home Assistant](#ativando-iniciador-de-conversa-com-prompt-do-home-assistant)
+1. [Criando a Skill Alexa](#criando-a-skill-alexa)
+2. [Obtendo o home_assistant_agent_id](#obtendo-o-home_assistant_agent_id-do-assist-ou-da-ia-generativa-se-estiver-utilizando-uma)
+3. [Obtendo o home_assistant_token](#obtendo-o-home_assistant_token-token-de-longa-duração)
+4. [Configurando o Invocation Name](#configurando-o-invocation-name)
+5. [Publicando a Skill](#publicando-a-skill)
+6. [Ativando o reconhecimento de cômodo](#ativando-o-reconhecimento-de-cômodo-só-funciona-com-ia)
+7. [Ativando iniciador de conversa com prompt do Home Assistant](#ativando-iniciador-de-conversa-com-prompt-do-home-assistant)
 
-
-### Configurando o Home Assistant
-- Ative a API do Home Assistant para seu usuário e obtenha um token de acesso de longa duração.
 
 ### Criando a Skill Alexa
 

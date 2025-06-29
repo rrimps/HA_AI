@@ -1,22 +1,18 @@
 
 ## INSTALLATION
 
-> ⚠️ **Before continuing**, ensure everything is already working with the original Assist integration in Home Assistant.
+> ⚠️ **Before continuing**, ensure everything is already working with the original Assist integration in Home Assistant and your instance of HA is exposed to the Internet with an valid domain and HTTPS certificate.
 
 ### Table of Contents
 
-1. [Setting up Home Assistant](#setting-up-home-assistant)
-2. [Creating the Alexa Skill](#creating-the-alexa-skill)
-3. [Obtaining the home_assistant_agent_id](#obtaining-the-home_assistant_agent_id-from-assist-or-the-generative-ai-if-you-are-using-one)
-4. [Obtaining the home_assistant_token](#obtaining-the-home_assistant_token-long-lived-token)
-5. [Setting the Invocation Name](#setting-the-invocation-name)
-6. [Publishing the Skill](#publishing-the-skill)
-7. [Enabling room recognition](#enabling-room-recognition-works-only-with-ai)
-8. [Enabling conversation starter with prompt from Home Assistant](#enabling-conversation-starter-with-prompt-from-home-assistant)
+1. [Creating the Alexa Skill](#creating-the-alexa-skill)
+2. [Obtaining the home_assistant_agent_id](#obtaining-the-home_assistant_agent_id-from-assist-or-the-generative-ai-if-you-are-using-one)
+3. [Obtaining the home_assistant_token](#obtaining-the-home_assistant_token-long-lived-token)
+4. [Setting the Invocation Name](#setting-the-invocation-name)
+5. [Publishing the Skill](#publishing-the-skill)
+6. [Enabling room recognition](#enabling-room-recognition-works-only-with-ai)
+7. [Enabling conversation starter with prompt from Home Assistant](#enabling-conversation-starter-with-prompt-from-home-assistant)
 
-
-### Setting up Home Assistant
-- Enable the Home Assistant API for your user and obtain a long-lived access token.
 
 ### Creating the Alexa Skill
 
