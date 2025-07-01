@@ -28,7 +28,7 @@
 2. Go to the **Code** tab.
 3. Insert your information into the configuration file as instructed below:
    - Open the `config.cfg` file in the project's root directory (/Skill Code/lambda/).
-   - Insert the following information:
+   - Insert the following information (required settings):
      ```txt
      home_assistant_url=https://YOUR-HOME-ASSISTANT-EXTERNAL-URL
      home_assistant_token=YOUR-HOME-ASSISTANT-TOKEN
