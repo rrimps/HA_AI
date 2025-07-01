@@ -28,10 +28,16 @@
 2. Vá na aba **Code**
 3. Insira suas informações no arquivo de configuração conforme instruções abaixo:
    - Abra o arquivo `config.cfg` no diretório raiz do projeto (/Skill Code/lambda/).
-   - Insira as seguintes informações:
+   - Insira as seguintes informações (configurações obrigatórias):
      ```txt
      home_assistant_url=https://SUA-URL-EXTERNA-DO-HOME-ASSISTANT
      home_assistant_token=SEU-TOKEN-DO-HOME-ASSISTANT
+     ```
+   - **home_assistant_url**: URL externa do seu Home Assistant (caminho raiz).
+   - **home_assistant_token**: Token de acesso de longa duração do seu Home Assistant.   
+
+   - Você pode adicionar essas configurações `opcionais` também (mas atente-se às instruções que cada uma exige):
+     ```txt
      home_assistant_agent_id=SEU-AGENT-ID
      home_assistant_language=pt-BR
      home_assistant_room_recognition=False
@@ -41,8 +47,6 @@
      assist_input_entity=input_text.assistant_input
      debug=true
      ```
-   - **home_assistant_url**: URL externa do seu Home Assistant (caminho raiz).
-   - **home_assistant_token**: Token de acesso de longa duração do seu Home Assistant.
    - **(opcional) home_assistant_agent_id**: ID do agente de conversação configurado no seu Home Assistant, se não configurado, será utilizado o Assist (Padrão).
    - **(opcional) home_assistant_language**: Idioma para chamar a API de conversação do Home Assistant. Se não configurado, será utilizado o padrão do agente definido.
    - **(opcional) home_assistant_room_recognition**: Ative o modo de identificação de área do dispositivo com `True`. **Atenção**, só funciona com IA e precisa de configurações adicionais no Home Assistant. _Se utiliza o Assist padrão, desative essa opção, pois nenhum comando irá funcionar com ela ativada e sem a configuração adequada._
@@ -51,6 +55,7 @@
    - **(opcional) ask_for_further_commands**, Ative novas perguntas com `True`. Esta variável determina se a Alexa perguntará por mais comandos após responder. Defina como `True` para ativar este comportamento ou `False` para desativá-lo. O padrão é `False`.
    - **(opcional) assist_input_entity**: Ativando funcionalidade de iniciar uma conversa com prompt do Home Assistant `input_text.assistant_input`. **Atenção**, essa funcionalidade requer [configurações extras no Home Assistant](#ativando-iniciador-de-conversa-com-prompt-do-home-assistant).
    - **(opcional) debug**, Ativa o debug com `True`. Defina esta variável para registrar as mensagens de depuração.
+   
 4. Se desejar, altere as respostas da skill no arquivo `/locale/pt-BR.lang` ou outro idioma suportado.
 5. Salve as alterações.
 6. Clique em `Deploy`.
