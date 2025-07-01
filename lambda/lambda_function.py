@@ -142,7 +142,7 @@ class GptQueryIntentHandler(AbstractRequestHandler):
         response = process_conversation(f"{query}{device_id}")
         logger.info(f"Response generated: {response}")
 
-		logger.debug(f"Ask for further commands enabled: {ask_for_further_commands}")
+        logger.debug(f"Ask for further commands enabled: {ask_for_further_commands}")
         if ask_for_further_commands:
             return handler_input.response_builder.speak(response).ask(globals().get("alexa_speak_question")).response
         else:
