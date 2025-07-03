@@ -56,9 +56,11 @@
    - **(optional) assist_input_entity**: Enable conversation starter with prompt from Home Assistant `input_text.assistant_input`. **Attention**, this feature require [extra setup in Home Assistant](#enabling-conversation-starter-with-prompt-from-home-assistant).
    - **(optional) debug**, Enable debbuging with `True`. Set this variable to log the debug messages.
 
-4. If desired, change the default skill responses in the `/locale/en-US.lang` file or another supported language.
-5. Save the changes.
-6. Click on `Deploy`.
+4. If you wish, change the skill responses in the `/locale/en-US.lang` file or another supported language.
+5. After making any changes in the code or configuration, click `Save`.
+6. Then click `Deploy`.
+7. Finally, go back to the `Build` tab and click `Build skill`.
+
 
 ### Obtaining the `home_assistant_agent_id` from Assist or the generative AI (if you are using one)
 

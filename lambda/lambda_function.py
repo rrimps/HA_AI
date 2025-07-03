@@ -172,7 +172,7 @@ def process_conversation(query):
     
     # Gets user-configured environment variables
     if not home_assistant_url:
-        logger.error("Please set 'home_assistant_url' AWS Lambda Functions environment variable.")
+        logger.error("Please set 'home_assistant_url' in the config.cfg file.")
         return globals().get("alexa_speak_error")
     
     home_assistant_agent_id = globals().get("home_assistant_agent_id", None)

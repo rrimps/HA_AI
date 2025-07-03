@@ -57,8 +57,9 @@
    - **(opcional) debug**, Ativa o debug com `True`. Defina esta variável para registrar as mensagens de depuração.
    
 4. Se desejar, altere as respostas da skill no arquivo `/locale/pt-BR.lang` ou outro idioma suportado.
-5. Salve as alterações.
-6. Clique em `Deploy`.
+5. Após qualquer alteração feita, seja no código ou configuração, clique em `Save`.
+6. Depois clique em `Deploy`.
+7. Por fim, volte na aba `Build` e clique em `Build skill`.
 
 ### Obtendo o `home_assistant_agent_id` do Assist ou da IA generativa (se estiver utilizando uma)
 
