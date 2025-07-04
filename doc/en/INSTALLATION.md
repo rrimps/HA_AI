@@ -140,7 +140,7 @@
 
   #### This setup add prompter feature to enable Alexa conversations started from Home Assistant
 
-  > ⚠️ **Importante:** Before continuing you must have [Alexa Media Player](https://github.com/alandtse/alexa_media_player) installed and configured.
+  > ⚠️ **Before continuing**, ensure that you must have [Alexa Media Player](https://github.com/alandtse/alexa_media_player) installed and configured.
 
   1. Enable the configuration in Alexa skill:
     - Add the following line to your `config.cfg` file:

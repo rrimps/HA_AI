@@ -140,7 +140,7 @@
 
 #### Esta configuração adiciona o recurso de prompter para permitir conversas da Alexa iniciadas a partir do Home Assistant
 
-> ⚠️ **Importante:** Antes de continuar você deve ter o [Alexa Media Player](https://github.com/alandtse/alexa_media_player) instalado e configurado.
+> ⚠️ **Antes de continuar**, garanta que você possui o [Alexa Media Player](https://github.com/alandtse/alexa_media_player) instalado e configurado.
 
 1. Ative a configuração na skill da Alexa:
    - Adicione a seguinte linha ao seu arquivo `config.cfg`:
