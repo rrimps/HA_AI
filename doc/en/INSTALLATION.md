@@ -3,7 +3,7 @@
 
 > ⚠️ **Before continuing**, ensure everything is already working with the original Assist integration in Home Assistant and your instance of HA is exposed to the Internet with an valid domain and HTTPS certificate.
 
-### Table of Contents
+## Table of Contents
 
 1. [Creating the Alexa Skill](#creating-the-alexa-skill)
 2. [Obtaining the home_assistant_agent_id](#obtaining-the-home_assistant_agent_id-from-assist-or-the-generative-ai-if-you-are-using-one)
@@ -14,7 +14,7 @@
 7. [Enabling conversation starter with prompt from Home Assistant](#enabling-conversation-starter-with-prompt-from-home-assistant)
 
 
-### Creating the Alexa Skill
+## Creating the Alexa Skill
 
 1. Create a Skill in the [Alexa Developer Console](https://developer.amazon.com/alexa/console/ask) by following the steps below:
    - **Name your Skill**: Choose a name of your preference (e.g., Home Assistant Assist)
@@ -62,7 +62,7 @@
 7. Finally, go back to the `Build` tab and click `Build skill`.
 
 
-### Obtaining the `home_assistant_agent_id` from Assist or the generative AI (if you are using one)
+## Obtaining the `home_assistant_agent_id` from Assist or the generative AI (if you are using one)
 
 - Navigate to **Developer Tools**, go to the `Actions` tab, and follow the steps below: 
 1. Search for `conversation.process` in the action field and select it:
@@ -77,7 +77,7 @@
 
   ![Action: Agent ID](images/dev_action_yaml.png)
 
-### Obtaining the `home_assistant_token` (Long-Lived Token)
+## Obtaining the `home_assistant_token` (Long-Lived Token)
 
 - With your Home Assistant open, go to your user profile in the bottom-left corner, click on it, and then go to the `Security` tab at the top:
   1. At the bottom of the page, click the `CREATE TOKEN` button:
@@ -91,7 +91,7 @@
 
   4. Place the generated token in the configuration
 
-### Setting the ``Invocation Name``
+## Setting the ``Invocation Name``
 
 - The default invocation name set in the code is "smart house."
 - To change the invocation name:
@@ -100,7 +100,7 @@
   3. Enter the desired new invocation name and save the changes (test if this wake word can be used in the **Test** tab).
   4. Rebuild the model by clicking on `Build skill` if you make changes.
   
-### Publishing the Skill
+## Publishing the Skill
 
 1. After deploying the code in the **Code** tab, return to the **Build** tab and click on **Build skill**.
 2. Then go to the **Alexa** app on your phone: `More` > `Skills & Games` > scroll to the bottom and click on `Your Skills` > `Dev.`, click on the skill you just created and **activate** it.
@@ -109,7 +109,7 @@
     ![Activate for use](images/alexa_dev_app_activated.jpg)
 3. Go back to the ``Alexa Developer Console`` and test the Skill in the **Test** tab to ensure the wake word and skill are working correctly.
 
-### Enabling room recognition (works only with AI)
+## Enabling room recognition (works only with AI)
 - In this mode, the skill sends the device ID (from the `Echo` device running the skill) in the Home Assistant conversation API call. Then, with a command instruction for the AI and a label associated with the device, the AI can identify the devices in the same area where your `Alexa` is located. To enable it, follow the steps below:
 
   ***Attention!***
@@ -136,7 +136,7 @@
      If asked to perform an action and no area is specified for the device, capture the identifier contained after "device_id:" in the command, obtain the label with the same identifier, and associate the device requested in the command to the label area found.
      ```
 
-### Enabling conversation starter with prompt from Home Assistant
+## Enabling conversation starter with prompt from Home Assistant
 
   #### This setup add prompter feature to enable Alexa conversations started from Home Assistant
 

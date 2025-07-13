@@ -3,7 +3,7 @@
 
 > ⚠️ **Before continuing**, garante que tudo está fncionando com o Assist no Home Assistant e sua instância do Home Assistant está exposta para Internet com um domínio e um certificado HTTPS válido.
 
-### Table of Contents
+## Table of Contents
 
 1. [Criando a Skill Alexa](#criando-a-skill-alexa)
 2. [Obtendo o home_assistant_agent_id](#obtendo-o-home_assistant_agent_id-do-assist-ou-da-ia-generativa-se-estiver-utilizando-uma)
@@ -14,7 +14,7 @@
 7. [Ativando iniciador de conversa com prompt do Home Assistant](#ativando-iniciador-de-conversa-com-prompt-do-home-assistant)
 
 
-### Criando a Skill Alexa
+## Criando a Skill Alexa
 
 1. Crie uma Skill na [Alexa Developer Console](https://developer.amazon.com/alexa/console/ask) seguindo os passos abaixo:
    - **Name your Skill**: Escolha um nome de sua preferência (Ex: Home Assistant Assist)
@@ -61,7 +61,7 @@
 6. Depois clique em `Deploy`.
 7. Por fim, volte na aba `Build` e clique em `Build skill`.
 
-### Obtendo o `home_assistant_agent_id` do Assist ou da IA generativa (se estiver utilizando uma)
+## Obtendo o `home_assistant_agent_id` do Assist ou da IA generativa (se estiver utilizando uma)
 
 - Com seu Home Assistant aberto, navegue até a **Ferramentas de Desenvolvedor**, vá na aba `Ações` e siga os passos abaixo: 
 1. Busque por `conversation.process` no campo de ações e selecione:
@@ -76,7 +76,7 @@
 
   ![Ação: Agente ID](images/dev_action_yaml.png)
 
-### Obtendo o `home_assistant_token` (Token de longa duração)
+## Obtendo o `home_assistant_token` (Token de longa duração)
 
 - Com seu Home Assistant aberto, navegue até o seu perfil de usuário, no canto inferior esquerdo, clique e depois vá na aba `Segurança` na parte superior: 
   1. No final da página, clique no botão `CRIAR TOKEN`:
@@ -90,7 +90,7 @@
 
   4. Coloque o token gerado no arquivo de configuração.
 
-### Configurando o ``Invocation Name``
+## Configurando o ``Invocation Name``
 
 - O nome de invocação padrão configurado no código é "casa inteligente".
 - Para alterar o nome de invocação:
@@ -99,7 +99,7 @@
   3. Insira o novo nome de invocação desejado e salve as alterações (teste se essa palavra de ativação pode ser usada na aba de **Test**).
   4. Dê rebuild do modelo clicando `Build skill` se alterar.
   
-### Publicando a Skill
+## Publicando a Skill
 
 1. Após fazer o deploy do código na aba **Code**, volte para aba **Build** e clique em **Build skill**.
 2. Depois vá no aplicativo **Alexa** em seu celular e vá em: `Mais` > `Skills e jogos` > deslize a tela até o fim e clique em `Suas Skills` > `Desenv.`, clique na skill que você acabou de criar e **ative**
@@ -109,7 +109,7 @@
 
 3. Volte no console da ``Alexa Developer Console`` e teste a Skill na aba **Test** para garantir que a palavra de ativação e a skill estão funcionando corretamente.
 
-### Ativando o reconhecimento de cômodo (só funciona com IA)
+## Ativando o reconhecimento de cômodo (só funciona com IA)
 - Nesse modo, a skill envia o device id (do dispositivo `echo` que está executando a skill) na chamada da API de conversação do Home Assistant, então com uma instrução de comando para a IA e um rótulo associado no dispositivo, a IA consegue identificador os dispositivo da mesma área onde está localizado sua `Alexa`, para ativar, siga os passos abaixo:
 
   ***Atenção !***
@@ -136,7 +136,7 @@
      Se solicitado uma ação em um dispositivo e sua área não for fornecida, capture o identificador contido após o "device_id:" no comando, obtenha o rótulo com mesmo identificador e associe a área desse rótulo ao dispositivo para saber área o dispositivo pertence.
      ```
 
-### Ativando iniciador de conversa com prompt do Home Assistant
+## Ativando iniciador de conversa com prompt do Home Assistant
 
 #### Esta configuração adiciona o recurso de prompter para permitir conversas da Alexa iniciadas a partir do Home Assistant
 
