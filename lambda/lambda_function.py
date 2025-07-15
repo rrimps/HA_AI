@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+import warnings
+import sys
+
+if not sys.warnoptions:
+    warnings.filterwarnings("ignore", category=SyntaxWarning)
+
 import os
 import re
 import logging
@@ -47,16 +53,17 @@ if not globals().get("home_assistant_url") or not globals().get("home_assistant_
 conversation_id = None
 last_interaction_date = None
 is_apl_supported = False
-
+user_locale = "US"  # Default locale
 home_assistant_url = globals().get("home_assistant_url", "").strip("/")
 apl_document_token = str(uuid.uuid4())
 assist_input_entity = globals().get("assist_input_entity", "input_text.assistant_input")
 ask_for_further_commands = bool(globals().get("ask_for_further_commands", False))
+suppress_greeting = bool(globals().get("suppress_greeting", False))
 
 # Helper: fetch text input via webhook
 def fetch_prompt_from_ha():
     """
-    Reads the state of your input_text helper directly via REST.
+    Reads the state of your input_text helper directly via REST API.
     """
     try:
         url = f"{home_assistant_url}/api/states/{assist_input_entity}"
@@ -73,6 +80,14 @@ def fetch_prompt_from_ha():
         logger.error(f"Error fetching prompt from HA state: {e}")
     return ""
 
+def localize(handler_input):
+    # Load locale per user
+    locale = handler_input.request_envelope.request.locale
+    load_config(f"locale/{locale}.lang")
+
+    # save user_locale var for regional differences in number handling like 2.4°C / 2,4°C
+    global user_locale
+    user_locale = locale.split("-")[1]  # "de-DE" -> "DE" split to respect lang differencies (not country specific)
 
 class LaunchRequestHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
@@ -81,13 +96,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         global conversation_id, last_interaction_date, is_apl_supported
         
-        # Load locale per user
-        locale = handler_input.request_envelope.request.locale
-        load_config(f"locale/{locale}.lang")
-
-        # save user_locale var for regional differences in number handling like 2.4°C / 2,4°C
-        global user_locale
-        user_locale = locale.split("-")[1]  # "de-DE" -> "DE" split to respect lang differencies (not country specific)
+        localize(handler_input)
 
         # Check for a pre-set prompt from HA
         prompt = fetch_prompt_from_ha()
@@ -116,55 +125,77 @@ class LaunchRequestHandler(AbstractRequestHandler):
             # First run of the day
             speak_output = globals().get("alexa_speak_welcome_message")
             last_interaction_date = current_date
-            
-        return handler_input.response_builder.speak(speak_output).ask(speak_output).response
+
+        if suppress_greeting:
+            return handler_input.response_builder.ask("").response
+        else:
+            return handler_input.response_builder.speak(speak_output).ask(speak_output).response
 
 class GptQueryIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("GptQueryIntent")(handler_input)
 
     def handle(self, handler_input):
-        # User query
-        query = handler_input.request_envelope.request.intent.slots["query"].value
+
+        # Ensure locale is set correctly
+        localize(handler_input)
+
+        request = handler_input.request_envelope.request
+        context = handler_input.request_envelope.context
+        response_builder = handler_input.response_builder
+
+        # Extract user query
+        query = request.intent.slots["query"].value
         logger.info(f"Query received from Alexa: {query}")
-        
-        # Handles specific commands/keywords
-        response = keywords_exec(query, handler_input)
-        if response:
-            return response
-        
+
+        # Handle keyword-based logic
+        keyword_response = keywords_exec(query, handler_input)
+        if keyword_response:
+            return keyword_response
+
+        # Include device ID if needed
         device_id = ""
-        home_assistant_room_recognition = bool(os.environ.get("home_assistant_room_recognition", False))
-        if home_assistant_room_recognition:
-            # Get the deviceId of the device that executed the skill
-            device_id = ". device_id: " + handler_input.request_envelope.context.system.device.device_id
-        
-        response = process_conversation(f"{query}{device_id}")
+        if bool(os.environ.get("home_assistant_room_recognition", False)):
+            device_id = f". device_id: {context.system.device.device_id}"
+
+        full_query = query + device_id
+        response = process_conversation(full_query})
         logger.info(f"Response generated: {response}")
 
         logger.debug(f"Ask for further commands enabled: {ask_for_further_commands}")
         if ask_for_further_commands:
-            return handler_input.response_builder.speak(response).ask(globals().get("alexa_speak_question")).response
+            return response_builder.speak(response).ask(globals().get("alexa_speak_question")).response
         else:
-            return handler_input.response_builder.speak(response).set_should_end_session(True).response
+            return response_builder.speak(response).set_should_end_session(True).response
 
 # Handles keywords to execute specific commands
 def keywords_exec(query, handler_input):
-    # If the user gives a command to 'open dashboard' or 'open home assistant', it opens the dashboard and stops the skill
+    # Check if the previous response was one of those that allow closing with a keyword
+    last_speak_output = handler_input.attributes_manager.session_attributes.get("last_speak_output", "")
+
+    # Commands to open the dashboard
     keywords_top_open_dash = globals().get("keywords_to_open_dashboard").split(";")
     if any(ko.strip().lower() in query.lower() for ko in keywords_top_open_dash):
         logger.info("Opening Home Assistant dashboard")
         open_page(handler_input)
         return handler_input.response_builder.speak(globals().get("alexa_speak_open_dashboard")).response
-    
-    # If the user gives a thank you command to exit, it interrupts the skill.
+
+    # Commands to close the skill — are only valid if the last response was one of the allowed ones
     keywords_close_skill = globals().get("keywords_to_close_skill").split(";")
-    if any(kc.strip().lower() in query.lower() for kc in keywords_close_skill):
-        logger.info("Closing skill from keyword command")
+    allowed_closing_contexts = [
+        globals().get("alexa_speak_welcome_message"),
+        globals().get("alexa_speak_next_message"),
+        globals().get("alexa_speak_question"),
+        globals().get("alexa_speak_help"),
+    ]
+
+    if (any(kc.strip().lower() in query.lower() for kc in keywords_close_skill) and last_speak_output in allowed_closing_contexts):
+        logger.info("Closing skill from keyword command (context verified)")
         return CancelOrStopIntentHandler().handle(handler_input)
-    
-    # If it is not a keyword, the flow continues normally.
+
+    # If it is not a keyword or the context does not allow closing
     return None
+
 
 # Calls the Home Assistant API and handles the response
 def process_conversation(query):
@@ -194,7 +225,6 @@ def process_conversation(query):
         if conversation_id:
             data["conversation_id"] = conversation_id
 
-        # Faz a requisição na API do Home Assistant
         ha_api_url = "{}/api/conversation/process".format(home_assistant_url)
         logger.debug(f"HA request url: {ha_api_url}")        
         logger.debug(f"HA request data: {data}")
@@ -209,13 +239,14 @@ def process_conversation(query):
         
         if (contenttype == "application/json"):
             response_data = response.json()
+            speech = None
+
             if response.status_code == 200 and "response" in response_data:
                 conversation_id = response_data.get("conversation_id", conversation_id)
                 response_type = response_data["response"]["response_type"]
                 
                 if response_type == "action_done" or response_type == "query_answer":
                     speech = response_data["response"]["speech"]["plain"]["speech"]
-                    # Remover "device_id:" e o que vem depois
                     if "device_id:" in speech:
                         speech = speech.split("device_id:")[0].strip()
                 elif response_type == "error":
@@ -223,7 +254,16 @@ def process_conversation(query):
                     logger.error(f"Error code: {response_data['response']['data']['code']}")
                 else:
                     speech = globals().get("alexa_speak_error")
-                
+
+            if not speech:
+                if "message" in response_data:
+                    message = response_data["message"]
+                    logger.error(f"Empty speech: {message}")
+                    return improve_response(f"{globals().get('alexa_speak_error')} {message}")
+                else:
+                    logger.error(f"Empty speech: {response_data}")
+                    return globals().get("alexa_speak_error")
+
             return improve_response(speech)
         elif (contenttype == "text/html") and int(response.status_code, 0) >= 400:
             errorMatch = re.search(r'<title>(.*?)</title>', response.text, re.IGNORECASE)
@@ -243,7 +283,6 @@ def process_conversation(query):
             return globals().get("alexa_speak_error")
             
     except requests.exceptions.Timeout as te:
-        # Tratamento para timeout
         logger.error(f"Timeout when communicating with Home Assistant: {str(te)}", exc_info=True)
         return globals().get("alexa_speak_timeout")
 
@@ -251,35 +290,31 @@ def process_conversation(query):
         logger.error(f"Error processing response: {str(e)}", exc_info=True)
         return globals().get("alexa_speak_error")
 
-# Substitui palavras geradas incorretamente pelo interpretador da Alexa na query
+# Replaces incorrectly generated words by Alexa interpreter in the query
 def replace_words(query):
     query = query.replace('4.º','quarto')
     return query
 
-# Substitui palavras e caracteres especiais para falar a resposta da API
+# Replaces words and special characters to improve API response speech
 def improve_response(speech):
-    # Função para melhorar a legibilidade da resposta
+    global user_locale
     speech = speech.replace(':\n\n', '').replace('\n\n', '. ').replace('\n', ',').replace('-', '').replace('_', ' ')
-    
-    #replacements = str.maketrans('ïöüÏÖÜ', 'iouIOU')
-    #speech = speech.translate(replacements)
-    
-    # change decimal seperator if user_locale = "de-DE"
+
+    # Change decimal separator if user_locale = "de-DE"
     if user_locale == "DE":
-        # only replace decimal seperators and not 1.000 seperators
-        speech = re.sub(r'(\d+)\.(\d{1,3})(?!\d)', r'\1,\2', speech)  # Dezimalpunkt (z. B. 2.4 -> 2,4)
+        # Only replace decimal separators and not 1.000 separators
+        speech = re.sub(r'(\d+)\.(\d{1,3})(?!\d)', r'\1,\2', speech)  # Decimal point (e.g. 2.4 -> 2,4)
     
     speech = re.sub(r'[^A-Za-z0-9çÇáàâãäéèêíïóôõöúüñÁÀÂÃÄÉÈÊÍÏÓÔÕÖÚÜÑ\sß.,!?°]', '', speech)
     return speech
 
-# Carrega o template do APL da tela inicial
+# Loads the initial APL screen template
 def load_template(filepath):
-    # Carrega o template da interface gráfica
     with open(filepath, encoding='utf-8') as f:
         template = json.load(f)
 
     if filepath == 'apl_openha.json':
-        # Localiza os textos dinâmicos do APL 
+        # Locate dynamic texts in the APL
         template['mainTemplate']['items'][0]['items'][2]['text'] = globals().get("echo_screen_welcome_text")
         template['mainTemplate']['items'][0]['items'][3]['text'] = globals().get("echo_screen_click_text")
         template['mainTemplate']['items'][0]['items'][4]['onPress']['source'] = get_hadash_url()
@@ -287,10 +322,10 @@ def load_template(filepath):
 
     return template
 
-# Abre dashboard do Home Assistant no navegador Silk
+# Opens Home Assistant dashboard in Silk browser
 def open_page(handler_input):
     if is_apl_supported:
-        # Renderizar modelo vazio, necessário para o comando OpenURL
+        # Renders an empty template, required for the OpenURL command
         # https://amazon.developer.forums.answerhub.com/questions/220506/alexa-open-a-browser.html
         
         handler_input.response_builder.add_directive(
@@ -308,12 +343,11 @@ def open_page(handler_input):
             )
         )
 
-# Monta a URL do dashboard do Home Assistant
+# Builds the Home Assistant dashboard URL
 def get_hadash_url():
     ha_dashboard_url = home_assistant_url
     ha_dashboard_url += "/{}".format(globals().get("home_assistant_dashboard", "lovelace"))
     
-    # Adicionando o modo kioskmode, se estiver ativado
     home_assistant_kioskmode = bool(globals().get("home_assistant_kioskmode", False))
     if home_assistant_kioskmode:
         ha_dashboard_url += '?kiosk'
@@ -344,6 +378,19 @@ class SessionEndedRequestHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         return handler_input.response_builder.response
 
+class CanFulfillIntentRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return ask_utils.is_request_type("CanFulfillIntentRequest")(handler_input)
+
+    def handle(self, handler_input):
+        localize(handler_input)
+        
+        intent_name = handler_input.request_envelope.request.intent.name if handler_input.request_envelope.request.intent else None
+        if intent_name == "GptQueryIntent":
+            return handler_input.response_builder.can_fulfill("YES").add_can_fulfill_intent("YES").response
+        else:
+            return handler_input.response_builder.can_fulfill("NO").add_can_fulfill_intent("NO").response
+
 class CatchAllExceptionHandler(AbstractExceptionHandler):
     def can_handle(self, handler_input, exception):
         return True
@@ -359,6 +406,6 @@ sb.add_request_handler(GptQueryIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
+sb.add_request_handler(CanFulfillIntentRequestHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
-
 lambda_handler = sb.lambda_handler()

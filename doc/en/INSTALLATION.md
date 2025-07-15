@@ -43,17 +43,19 @@
      home_assistant_room_recognition=False
      home_assistant_dashboard=YOUR-DASHBOARD-ID
      home_assistant_kioskmode=False
-     ask_for_further_commands=False
      assist_input_entity=input_text.assistant_input
-     debug=true
+     ask_for_further_commands=False
+     suppress_greeting=False
+     debug=True
      ```
    - **(optional) home_assistant_agent_id**: Conversation agent ID configured in your Home Assistant; if not set, Assist will be used (Default).
    - **(optional) home_assistant_language**: Language to call the Home Assistant conversation API. If not set, the agent's default language will be used.
    - **(optional) home_assistant_room_recognition**: Enable device area recognition mode with `True`. **Attention**, it only works with AI and need extra setup in Home Assistant. _if you're using the default Assist, disable this option, as no command will work._
    - **(optional) home_assistant_dashboard**: Dashboard path to display on Echo Show, e.g., `mushroom`; if not set, "lovelace" will be loaded.
    - **(optional) home_assistant_kioskmode**: Enable kiosk mode with `True`. **Attention**, only activate this option if you have the [kiosk mode component](https://github.com/maykar/kiosk-mode) installed.
-   - **(optional) ask_for_further_commands**, Enabling further commands with `True`. This variable determines whether Alexa will ask for further commands after responding. Set it to `True` to enable this behavior or `False` to disable it. The default is `False`.
    - **(optional) assist_input_entity**: Enable conversation starter with prompt from Home Assistant `input_text.assistant_input`. **Attention**, this feature require [extra setup in Home Assistant](#enabling-conversation-starter-with-prompt-from-home-assistant).
+   - **(optional) ask_for_further_commands**, This variable determines whether Alexa will ask for further commands after responding. Set it to `True` to enable this behavior or `False` to disable it. The default is `False`.   
+  - **(optional) suppress_greeting**, This variable determines whether Alexa will speak the initial greeting/question when opening the skill. Set it to `True` to disable the greeting or `False` to keep it. The default is `False`.
    - **(optional) debug**, Enable debbuging with `True`. Set this variable to log the debug messages.
 
 4. If you wish, change the skill responses in the `/locale/en-US.lang` file or another supported language.
@@ -170,8 +172,7 @@
       5. Click the three-dot menu (⋮) and switch to **YAML mode**.
       6. Paste the following YAML into the editor.  
         Replace the placeholders:
-          - `*your Skill ID*` → your actual Alexa skill ID  
-          - `*the alexa you want to target*` → the `media_player` entity ID of your Alexa device
+          - `*Your Skill ID*` → Your actual Alexa skill ID
 
           ```
           sequence:
@@ -183,10 +184,10 @@
                 entity_id: input_text.assistant_input
             - action: media_player.play_media
               data:
-                media_content_id: *your Skill ID*
+                media_content_id: *Your Skill ID*
                 media_content_type: skill
               target:
-                entity_id: *the alexa you want to target*
+                entity_id: "{{alexa_device}}"
             - delay:
                 hours: 0
                 minutes: 0
@@ -197,46 +198,51 @@
               data:
                 value: none
               target:
-                entity_id: input_text.assistant_input 
-          alias: prompt on Alexa device
+                entity_id: input_text.assistant_input
+          alias: Prompt on Alexa device
           description: ""
           fields:
             prompt:
               selector:
                 text: null
               name: prompt
-              description: >-
-                The prompt to pass to the skill, used as the first message to start a conversation.
+              description: The prompt to pass to the skill, used as the first message to start a conversation.
               required: true
-          ```
+            alexa_device:
+              selector:
+                text: null
+              name: alexa_device
+              description: The Alexa device you need to start the skill to prompt.
+              required: true
+         ```
 
       7. Click **Save**.
 
   4. Call the Script from an Automation
 
-      Now that the script is set up, you can trigger it from an automation. This will:
-        - Pass a prompt to your Alexa skill;
-        - Begin a spoken conversation using the assistant's response.
-        ### Example Automation Action
+    Now that the script is configured, you can trigger it from an automation or test it using Developer Tools > Actions:
+      - Send a prompt to your Alexa skill;
+      - Start a voice conversation with the assistant's response.
+      ### Example Automation Action
 
-        ```
-        action: script.prompt_alexa_device
-        metadata: {}
-        data:
-          prompt: >-
-            Suggest that I remember to lock all doors and windows in the house before leaving
-        ```
+      ```
+      action: script.prompt_on_alexa_device
+      data:
+        prompt: Suggest that I remember to lock all doors and windows before leaving
+        alexa_device: media_player.echoshow_office
+      ```
 
-        Other sample prompts:
+      Other prompt examples:
 
-        ```
-        - What's the weather forecast?
-        - Ask if I'd like to turn off the lights
-        ```
-        > ⚠️ **Important:** Prompts must be **fewer than 255 characters**, or the call will fail.
+      ```
+      - What is the weather forecast?
+      - Ask if I would like to turn off the lights
+      ```
+
+      > ⚠️ **Important:** Prompts must be **less than 255 characters**, otherwise the call will not
 
 
-### Good luck!
+## Good luck!
 Now you can use your Alexa skill to integrate and interact with Home Assistant via voice using Assist or open your favorite dashboard on the Echo Show.
 If you enjoyed it, remember to send a **Thank You** to the developers.
 
