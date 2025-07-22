@@ -90,6 +90,9 @@
               }
             ],
             "type": "ALEXA_PRESENTATION_APL"
+          },
+          {
+            "type": "ALEXA_PROGRESSIVE_RESPONSE"
           }
         ],
         "locales": {},
